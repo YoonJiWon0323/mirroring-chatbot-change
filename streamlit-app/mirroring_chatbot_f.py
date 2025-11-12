@@ -89,9 +89,16 @@ if "user_id" not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())[:8]
 
 # ============================================================
-# ✅ 4️⃣ 임베딩 모델 로드 (유사도 계산용)
+# ✅ 4️⃣ 임베딩 모델 로드 (lazy 방식, RAM 최적화)
 # ============================================================
-embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+@st.cache_resource
+def load_embed_model():
+    from sentence_transformers import SentenceTransformer
+    from sklearn.metrics.pairwise import cosine_similarity
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    return model, cosine_similarity
+
+embed_model, cosine_similarity = load_embed_model()
 
 def calc_style_similarity(user_text, bot_text):
     try:
