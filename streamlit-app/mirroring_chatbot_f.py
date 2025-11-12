@@ -1,6 +1,10 @@
+
 # ============================================================
 # 🚀 Mirroring Chatbot (설계자 조정 완전 버전)
 # ============================================================
+import os
+os.system("pip install --quiet openai>=1.55.0")
+
 from openai import OpenAI
 import streamlit as st
 import json
@@ -8,11 +12,8 @@ from datetime import datetime
 import time
 import uuid
 import os
-import openai
 import gspread
 from google.oauth2.service_account import Credentials
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
 
 # ============================================================
 # ✅ 1️⃣ 기본 설정
