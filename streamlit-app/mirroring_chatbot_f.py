@@ -1,11 +1,6 @@
-
 # ============================================================
-# 🚀 Mirroring Chatbot (설계자 조정 완전 버전)
+# 🚀 Mirroring Chatbot (Cloud Safe + 유사도 유지 완전 버전)
 # ============================================================
-import os
-os.system("pip install --quiet openai>=1.55.0")
-
-from openai import OpenAI
 import streamlit as st
 import json
 from datetime import datetime
@@ -14,6 +9,8 @@ import uuid
 import os
 import gspread
 from google.oauth2.service_account import Credentials
+from openai import OpenAI
+import openai
 
 # ============================================================
 # ✅ 1️⃣ 기본 설정
@@ -29,7 +26,6 @@ try:
 
     openai.api_key = st.secrets["OPENAI_API_KEY"]
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
 except Exception as e:
     st.error(f"❌ 인증 오류: {e}")
 
@@ -90,7 +86,7 @@ if "user_id" not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())[:8]
 
 # ============================================================
-# ✅ 4️⃣ 임베딩 모델 로드 (lazy 방식, RAM 최적화)
+# ✅ 4️⃣ 유사도 계산 (Cloud-safe Lazy import)
 # ============================================================
 @st.cache_resource
 def load_embed_model():
@@ -107,7 +103,8 @@ def calc_style_similarity(user_text, bot_text):
         bot_vec = embed_model.encode([bot_text])
         sim = cosine_similarity(user_vec, bot_vec)[0][0]
         return round(float(sim), 3)
-    except Exception:
+    except Exception as e:
+        st.error(f"❌ 유사도 계산 오류: {e}")
         return None
 
 # ============================================================
@@ -258,7 +255,7 @@ elif st.session_state.get("phase") == "task_conversation":
         with st.chat_message("assistant"):
             st.markdown(bot_reply)
 
-        # 유사도 계산 및 표시
+        # ✅ 유사도 계산 및 표시
         sim = calc_style_similarity(user_input, bot_reply)
         if sim is not None:
             st.write(f"🔹 말투 유사도 점수: {sim}")
@@ -280,7 +277,6 @@ elif st.session_state.get("phase") == "task_conversation":
 elif st.session_state.get("phase") == "consent":
     st.subheader("🔒 설문 응답")
     st.write("아래 항목에 응답해 주세요. 응답은 자동 저장됩니다.")
-
     demo_gender = st.radio("성별:", ["선택 안 함", "남성", "여성", "기타"])
     demo_age = st.selectbox("연령대:", ["선택 안 함", "10대", "20대", "30대", "40대", "50대 이상"])
     demo_edu = st.selectbox("최종 학력:", ["선택 안 함", "고등학교 이하", "대학교", "대학원"])
@@ -316,5 +312,4 @@ elif st.session_state.get("phase") == "consent":
                 tone, formality, emotion_intensity, politeness, emoji_use, sentence_structure
             ]
             survey_ws.append_row(survey_row, value_input_option="USER_ENTERED")
-
             st.success("✅ 설문과 분석 결과가 Google Sheets에 저장되었습니다!")
